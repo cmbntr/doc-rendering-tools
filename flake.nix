@@ -3,58 +3,59 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs }: 
-    let
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    in
-      {
-        packages.x86_64-linux = {
-
-          default = pkgs.buildEnv {
-            name = "doc-rendering-tools";
-            paths = [
-              pkgs.gpp
-              pkgs.pandoc
-              pkgs.pandoc-include
-              pkgs.pandoc-lua-filters
-              pkgs.pandoc-imagine
-              pkgs.graphviz-nox
-              pkgs.texlive.combined.scheme-small
-            ];
-          };
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let pkgs = nixpkgs.legacyPackages.${system}; in
+      rec {
+        drt = pkgs.buildEnv {
+          name = "doc-rendering-tools";
+          paths = [
+            pkgs.gpp
+            pkgs.pandoc
+            pkgs.pandoc-include
+            pkgs.pandoc-lua-filters
+            pkgs.pandoc-imagine
+            pkgs.graphviz-nox
+            pkgs.texlive.combined.scheme-small
+          ];
         };
 
-        container = 
-          let 
-            baseContainer = let
+        baseContainer = let
               dt = pkgs.dockerTools;
-              inherit (dt) buildImage binSh usrBinEnv fakeNss caCertificates;
+              inherit (dt) buildImage binSh fakeNss caCertificates;
             in
               buildImage {
                 name = "base-img";
                 copyToRoot = [
-                  pkgs.coreutils
                   binSh
                   caCertificates
                   fakeNss
+                  pkgs.coreutils
+                  pkgs.findutils
+                  pkgs.gnugrep
+                  pkgs.gnused
+                  pkgs.gawk
                 ];
               };
-          in
-            pkgs.dockerTools.buildImage {
-              fromImage = baseContainer;
-              name = "doc-rendering-tools";
-              tag = "latest";
-              copyToRoot =  self.packages.x86_64-linux.default;
-              config = {
-                Cmd = [ "/bin/sh" ];
-                WorkingDir = "/tmp";
-                Env = [
-                  "HOME=/tmp"
-                ];
-              };
+        
+        packages.default = 
+          pkgs.dockerTools.buildImage {
+            fromImage = baseContainer;
+            name = "doc-rendering-tools";
+            tag = "latest";
+            copyToRoot =  drt;
+            config = {
+              Cmd = [ "/bin/sh" ];
+              WorkingDir = "/tmp";
+              Env = [
+                "HOME=/tmp"
+              ];
             };
+          };
+      }
+    );
 
-      };
 }

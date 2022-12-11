@@ -3,7 +3,7 @@ FROM docker.io/nixos/nix:latest as builder
 WORKDIR /build
 ADD flake.* /build/
 
-RUN nix --extra-experimental-features "nix-command flakes" build '.#container' && cp result doc-rendering-tools-img.tar.gz
+RUN nix --extra-experimental-features "nix-command flakes" build && cp result doc-rendering-tools-img.tar.gz
 
 #####################################################################
 FROM docker.io/nixos/nix:latest as deliver
