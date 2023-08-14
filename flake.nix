@@ -18,7 +18,12 @@
             pkgs.pandoc-include
             pkgs.pandoc-lua-filters
             pkgs.pandoc-imagine
+            pkgs.mscgen
+            pkgs.librsvg
             pkgs.graphviz-nox
+            pkgs.graphicsmagick
+            pkgs.graphicsmagick-imagemagick-compat
+            pkgs.nodePackages.mermaid-cli
             pkgs.texlive.combined.scheme-small
           ];
         };
